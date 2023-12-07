@@ -16,7 +16,7 @@ int r1,c1,r2,c2;
 int check(int,const char*);
 void displayMat(int[][MAX_COL],int,int);
 void* matMul(void*);
-void cli_fun(int clisock);
+void* cli_fun(void*);
 
 int main()
 {
@@ -24,6 +24,8 @@ int main()
 
 	check(sersock=socket(AF_INET,SOCK_STREAM,0),"Failed to create socket");
 
+	int enable = 1;
+	check(setsockopt(sersock, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int)),"setsockopt error");
 	struct sockaddr_in serv_addr;
 
 	memset(&serv_addr,'0',sizeof(serv_addr));
@@ -39,15 +41,13 @@ int main()
 	while(1)
 	{
 		check(clisock=accept(sersock,NULL,NULL),"Accept failed");
-		printf("Client connected\n");
-		cli_fun(clisock);
-
+		printf("Client connected. Creating a new thread...\n");
+		check(pthread_create(&tid1,NULL,cli_fun,(void*)&clisock),"Failed to create client thread");
 	}
 
 	pthread_join(tid1,NULL);
 	close(sersock);
 }
-
 
 int check(int exp,const char *msg)
 {
@@ -93,8 +93,9 @@ void* matMul(void* args)
 }
 
 
-void cli_fun(int clisock)
+void* cli_fun(void* cli_sock)
 {
+	int clisock=*(int*)cli_sock;
 	check(recv(clisock,&r1,sizeof(r1),0),"failed to receive r1");
         check(recv(clisock,&c1,sizeof(c1),0),"failed to receive c1");
         printf("Received dimensions of matrix 1: %d x %d\n", r1, c1);

@@ -1,69 +1,75 @@
-#include<stdio.h>
-#include<stdlib.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <pthread.h>
 
 #define MAX_ROWS 100
 #define MAX_COL 100
 
-void display(int,int,int[][MAX_COL]);
-void matMul(int,int, int[][MAX_COL],int,int, int[][MAX_COL],int[][MAX_COL]);
+int mat1[MAX_ROWS][MAX_COL], mat2[MAX_ROWS][MAX_COL], res[MAX_ROWS][MAX_COL];
+int r1, c1, r2, c2;
+
+void inputMat(int [][MAX_COL], int, int);
+void* matMul(void*);
+void displayMat(int [][MAX_COL], int, int);
 
 int main()
 {
-	int r1,c1,r2,c2;
-	int mat1[MAX_ROWS][MAX_COL],mat2[MAX_ROWS][MAX_COL],res[MAX_ROWS][MAX_COL];
-	int i,j;
+    printf("Enter the rows and columns of matrix 1:\n");
+    scanf("%d %d", &r1, &c1);
+    printf("Enter the elements of matrix 1:\n");
+    inputMat(mat1, r1, c1);
 
-	printf("Enter the rows and columns of matrix 1:\n");
-	scanf("%d %d",&r1,&c1);
+    printf("Enter the rows and columns of matrix 2:\n");
+    scanf("%d %d", &r2, &c2);
+    printf("Enter the elements of matrix 2:\n");
+    inputMat(mat2, r2, c2);
 
-        printf("Enter the elements of matrix 1:\n");
-        for(i=0;i<r1;i++)
-        {
-                for(j=0;j<c1;j++)
-                {
-                        scanf("%d",&mat1[i][j]);
-                }
-        }
+    if (c1 != r2)
+    {
+        printf("Invalid dimensions for matrix multiplication.\n");
+        return 0;
+    }
 
-	printf("Enter the rows and columns of matrix 2:\n");
-	scanf("%d %d",&r2,&c2);
-	printf("Enter the elements of matrix 2:\n");
-        for(i=0;i<r2;i++)
-        {
-                for(j=0;j<c2;j++)
-                {
-                        scanf("%d",&mat2[i][j]);
-                }
-        }
+    pthread_t tid[r1];
+    int i,tno[r1];
+    for(i=0;i<r1;i++)
+    {
+            tno[i]=i;
+            pthread_create(&tid[i],NULL,matMul,(void*)&tno[i]);
+    }
 
+    for(i=0;i<r1;i++)
+    {
+            pthread_join(tid[i],NULL);
+    }
 
-	printf("Matrix 1 is:\n");
-	display(r1,c1,mat1);
+    printf("Matrix 1:\n");
+    displayMat(mat1, r1, c1);
 
-        printf("Matrix 2 is:\n");
-        display(r2,c2,mat2);
+    printf("\nMatrix 2:\n");
+    displayMat(mat2, r2, c2);
 
-	printf("Resultant matrix is:\n");
-	matMul(r1,c1,mat1,r2,c2,mat2,res);
-        display(r1,c2,res);
+    printf("\nResultant matrix:\n");
+    displayMat(res, r1, c2);
+
+    return 0;
 }
 
-void display(int r,int c,int mat[][MAX_COL])
+void inputMat(int mat[][MAX_COL], int r, int c)
 {
-        int i,j;
-	for(i=0;i<r;i++)
+    for (int i = 0; i < r; i++)
+    {
+        for (int j = 0; j < c; j++)
         {
-                for(j=0;j<c;j++)
-                {
-                        printf("%d\t",mat[i][j]);
-                }
-                printf("\n");
+            scanf("%d", &mat[i][j]);
         }
+    }
 }
 
-void matMul(int r1,int c1, int mat1[][MAX_COL],int r2,int c2, int mat2[][MAX_COL],int res[][MAX_COL])
+void* matMul(void* args)
 {
-    for (int i = 0; i < r1; i++)
+    int t=*(int*)args;
+    for (int i = t; i < t+1; i++)
     {
         for (int j = 0; j < c2; j++)
         {
@@ -73,6 +79,18 @@ void matMul(int r1,int c1, int mat1[][MAX_COL],int r2,int c2, int mat2[][MAX_COL
                 res[i][j] += mat1[i][k] * mat2[k][j];
             }
         }
+    }
+}
+
+void displayMat(int mat[][MAX_COL], int r, int c)
+{
+    for (int i = 0; i < r; i++)
+    {
+        for (int j = 0; j < c; j++)
+        {
+            printf("%d\t", mat[i][j]);
+        }
+        printf("\n");
     }
 }
 
